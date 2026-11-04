@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aventura 3D: 100 Niveles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;700&display=swap');
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Inter', sans-serif;
+            touch-action: none; /* Previene scroll en móviles */
+        }
+        
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* Estilos de botones de la tienda */
+        .shop-btn {
+            transition: transform 0.1s, filter 0.1s;
+        }
+        .shop-btn:active {
+            transform: scale(0.95);
+        }
+        .shop-btn:disabled {
+            filter: grayscale(100%);
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Controles móviles */
+        .mobile-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            user-select: none;
+        }
+        .mobile-btn:active {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+    </style>
+</head>
+<body class="text-white">
+
+    <!-- Contenedor del canvas WebGL -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Capa de Interfaz de Usuario -->
+    <div id="ui-container" class="ui-layer flex flex-col justify-between">
+        
+        <!-- HUD Principal (Visible durante el juego) -->
+        <div id="hud" class="hidden interactive w-full p-4 flex justify-between items-start">
+            <div class="flex flex-col drop-shadow-md">
+                <span class="pixel-font text-yellow-400 text-sm md:text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">NIVEL: <span id="hud-level">1</span>/100</span>
+                <span class="pixel-font text-white text-xs md:text-md mt-2 drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">MONEDAS: <span id="hud-coins">0</span></span>
+            </div>
+            <button onclick="openShop()" class="bg-blue-600 hover:bg-blue-500 border-2 border-white px-4 py-2 rounded-lg font-bold shadow-[0_4px_0_#1e3a8a] active:shadow-none active:translate-y-1 transition-all">
+                🛒 TIENDA
+            </button>
+        </div>
+
+        <!-- Controles Móviles (Sólo aparecen en pantallas táctiles) -->
+        <div id="mobile-controls" class="hidden interactive w-full p-6 flex justify-between items-end pb-12">
+            <div class="flex gap-2">
+                <button id="btn-left" class="mobile-btn w-16 h-16 rounded-full flex items-center justify-center text-3xl">⬅️</button>
+                <button id="btn-right" class="mobile-btn w-16 h-16 rounded-full flex items-center justify-center text-3xl">➡️</button>
+            </div>
+            <div class="flex flex-col gap-2">
+                <button id="btn-up" class="mobile-btn w-16 h-16 rounded-full flex items-center justify-center text-3xl">⬆️</button>
+                <button id="btn-down" class="mobile-btn w-16 h-16 rounded-full flex items-center justify-center text-3xl">⬇️</button>
+            </div>
+        </div>
+
+        <!-- Menú Principal -->
+        <div id="main-menu" class="interactive absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm">
+            <h1 class="pixel-font text-4xl md:text-6xl text-center text-transparent bg-clip-text bg-gradient-to-b from-green-400 to-blue-600 mb-8 drop-shadow-[0_5px_5px_rgba(0,0,0,1)]">
+                LODE<br>CUBER 3D
+            </h1>
+            <p class="mb-8 text-gray-300 text-center max-w-md px-4">
+                Usa las <b>Flechas</b> para moverte, saltar y subir escaleras.<br><br>
+                Niveles 1-50: Zona de Pasto.<br>
+                Niveles 51-100: Zona de Rocas.<br>
+                ¡Llega a la puerta dorada!
+            </p>
+            <button onclick="startGame()" class="pixel-font bg-green-500 hover:bg-green-400 border-4 border-white text-white px-8 py-4 rounded-xl text-xl shadow-[0_6px_0_#166534] active:shadow-none active:translate-y-2 transition-all">
+                JUGAR
+            </button>
+        </div>
+
+        <!-- Tienda -->
+        <div id="shop-menu" class="hidden interactive absolute inset-0 bg-gray-900/95 flex flex-col items-center justify-center p-4 backdrop-blur-md">
+            <h2 class="pixel-font text-3xl text-yellow-400 mb-2">TIENDA</h2>
+            <p class="text-xl mb-6">Tus Monedas: <span id="shop-coins-display" class="font-bold text-yellow-400">0</span></p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
+                <!-- Item 1 -->
+                <div class="bg-gray-800 p-4 rounded-xl border-2 border-gray-600 flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-red-500 rounded-md mb-2 shadow-lg"></div>
+                    <h3 class="font-bold mb-1">Cubo Rojo</h3>
+                    <p class="text-sm text-gray-400 mb-4">Cambia tu color.</p>
+                    <button id="buy-red" onclick="buyItem('red', 10)" class="shop-btn bg-yellow-500 text-black font-bold py-2 px-4 rounded w-full">
+                        10 Monedas
+                    </button>
+                </div>
+                <!-- Item 2 -->
+                <div class="bg-gray-800 p-4 rounded-xl border-2 border-gray-600 flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-yellow-300 rounded-full mb-2 shadow-[0_0_15px_rgba(253,224,71,0.5)]"></div>
+                    <h3 class="font-bold mb-1">Aura Dorada</h3>
+                    <p class="text-sm text-gray-400 mb-4">Brilla como el oro.</p>
+                    <button id="buy-aura" onclick="buyItem('aura', 25)" class="shop-btn bg-yellow-500 text-black font-bold py-2 px-4 rounded w-full">
+                        25 Monedas
+                    </button>
+                </div>
+                <!-- Item 3 -->
+                <div class="bg-gray-800 p-4 rounded-xl border-2 border-gray-600 flex flex-col items-center text-center">
+                    <div class="w-16 h-16 flex items-center justify-center text-4xl mb-2">🚀</div>
+                    <h3 class="font-bold mb-1">Súper Salto</h3>
+                    <p class="text-sm text-gray-400 mb-4">Salta un 30% más alto.</p>
+                    <button id="buy-jump" onclick="buyItem('jump', 50)" class="shop-btn bg-yellow-500 text-black font-bold py-2 px-4 rounded w-full">
+                        50 Monedas
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="closeShop()" class="mt-8 bg-gray-600 hover:bg-gray-500 px-6 py-3 rounded-lg font-bold text-white transition-colors">
+                Volver al Juego
+            </button>
+        </div>
+
+        <!-- Pantalla de Nivel Completado -->
+        <div id="level-complete" class="hidden interactive absolute inset-0 bg-green-900/90 flex flex-col items-center justify-center">
+            <h2 class="pixel-font text-3xl md:text-5xl text-white mb-4 text-center">¡NIVEL COMPLETADO!</h2>
+            <p class="text-xl mb-8">Has recogido <span id="lvl-coins" class="text-yellow-400 font-bold">0</span> monedas.</p>
+            <button onclick="nextLevel()" class="pixel-font bg-yellow-500 hover:bg-yellow-400 border-4 border-white text-black px-8 py-4 rounded-xl text-xl shadow-[0_6px_0_#a16207] active:shadow-none active:translate-y-2 transition-all">
+                SIGUIENTE NIVEL
+            </button>
+        </div>
+
+        <!-- Pantalla de Fin de Juego (Ganaste) -->
+        <div id="game-won" class="hidden interactive absolute inset-0 bg-yellow-600/95 flex flex-col items-center justify-center text-center px-4">
+            <h2 class="pixel-font text-4xl md:text-6xl text-white mb-6 drop-shadow-lg">¡HAS GANADO!</h2>
+            <p class="text-2xl mb-8 max-w-2xl text-white drop-shadow-md">
+                ¡Superaste los 100 niveles!<br>
+                Tanto las praderas de pasto como las oscuras rocas han sido conquistadas por ti.
+            </p>
+            <button onclick="location.reload()" class="pixel-font bg-white text-yellow-600 px-8 py-4 rounded-xl text-xl shadow-lg transition-transform hover:scale-105">
+                JUGAR DE NUEVO
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- VARIABLES GLOBALES DEL JUEGO ---
+        let scene, camera, renderer;
+        let playerMesh, playerAura;
+        let gameActive = false;
+        let currentLevel = 1;
+        const MAX_LEVEL = 100;
+        let totalCoins = 0;
+        
+        // Upgrades
+        let hasRedSkin = false;
+        let hasAura = false;
+        let hasSuperJump = false;
+
+        // Físicas y movimiento
+        const keys = { left: false, right: false, up: false, down: false };
+        let player = {
+            x: 0, y: 0, width: 0.8, height: 0.8,
+            vx: 0, vy: 0,
+            speed: 0.12, jumpForce: 0.35, gravity: -0.018,
+            onGround: false, onLadder: false, climbing: false
+        };
+
+        // Arrays de entidades
+        let collisionBoxes = [];
+        let ladders = [];
+        let coins = [];
+        let exitDoor = null;
+
+        // Elementos UI
+        const uiMainMenu = document.getElementById('main-menu');
+        const uiHUD = document.getElementById('hud');
+        const uiShop = document.getElementById('shop-menu');
+        const uiLevelComplete = document.getElementById('level-complete');
+        const uiGameWon = document.getElementById('game-won');
+        const uiMobileControls = document.getElementById('mobile-controls');
+        const textLevel = document.getElementById('hud-level');
+        const textCoins = document.getElementById('hud-coins');
+
+        // Detectar Móvil
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+        // --- INICIALIZACIÓN DE THREE.JS ---
+        function init() {
+            // Escena
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Cielo por defecto
+            scene.fog = new THREE.Fog(0x87CEEB, 15, 40);
+
+            // Cámara
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 2, 18);
+
+            // Renderizador
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game-canvas'), antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+
+            // Luces
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.camera.left = -20;
+            dirLight.shadow.camera.right = 20;
+            dirLight.shadow.camera.bottom = -20;
+            dirLight.shadow.camera.top = 20;
+            scene.add(dirLight);
+
+            // Crear Jugador
+            const geometry = new THREE.BoxGeometry(player.width, player.height, player.width);
+            const material = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.2 }); // Azul por defecto
+            playerMesh = new THREE.Mesh(geometry, material);
+            playerMesh.castShadow = true;
+            scene.add(playerMesh);
+
+            // Aura (oculta al inicio)
+            const auraGeo = new THREE.SphereGeometry(1.2, 16, 16);
+            const auraMat = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.3, wireframe: true });
+            playerAura = new THREE.Mesh(auraGeo, auraMat);
+            playerAura.visible = false;
+            playerMesh.add(playerAura);
+
+            // Controles de teclado
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+                if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+                if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = true;
+                if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
+            });
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+                if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+                if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = false;
+                if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = false;
+            });
+
+            // Controles Móviles
+            if (isMobile) {
+                uiMobileControls.classList.remove('hidden');
+                setupMobileButton('btn-left', 'left');
+                setupMobileButton('btn-right', 'right');
+                setupMobileButton('btn-up', 'up');
+                setupMobileButton('btn-down', 'down');
+            }
+
+            window.addEventListener('resize', onWindowResize, false);
+            
+            animate();
+        }
+
+        function setupMobileButton(id, key) {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+            // Fallback por si deslizan el dedo fuera
+            btn.addEventListener('touchcancel', (e) => { e.preventDefault(); keys[key] = false; });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- SISTEMA DE GENERACIÓN DE NIVELES ---
+
+        function clearLevel() {
+            // Eliminar bloques
+            collisionBoxes.forEach(box => scene.remove(box.mesh));
+            collisionBoxes = [];
+            
+            // Eliminar escaleras
+            ladders.forEach(ladder => scene.remove(ladder.mesh));
+            ladders = [];
+
+            // Eliminar monedas
+            coins.forEach(c => scene.remove(c.mesh));
+            coins = [];
+
+            // Eliminar puerta
+            if (exitDoor) {
+                scene.remove(exitDoor.mesh);
+                exitDoor = null;
+            }
+        }
+
+        function addBlock(x, y, w, h, isGrassTheme) {
+            const geometry = new THREE.BoxGeometry(w, h, 2);
+            let materials = [];
+
+            if (isGrassTheme) {
+                // Tema Pasto (Niveles 1-50)
+                const dirtMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b }); // Cafe
+                const grassMat = new THREE.MeshStandardMaterial({ color: 0x22c55e }); // Verde
+                materials = [
+                    dirtMat, dirtMat, // derecha, izquierda
+                    grassMat, dirtMat, // arriba, abajo
+                    dirtMat, dirtMat // frente, atras
+                ];
+            } else {
+                // Tema Roca (Niveles 51-100)
+                const rockMat = new THREE.MeshStandardMaterial({ color: 0x4b5563, roughness: 0.9 }); // Gris oscuro
+                const rockTopMat = new THREE.MeshStandardMaterial({ color: 0x374151 }); // Gris un poco mas oscuro
+                materials = [
+                    rockMat, rockMat,
+                    rockTopMat, rockMat,
+                    rockMat, rockMat
+                ];
+            }
+
+            const mesh = new THREE.Mesh(geometry, materials);
+            mesh.position.set(x, y, 0);
+            mesh.receiveShadow = true;
+            mesh.castShadow = true;
+            scene.add(mesh);
+
+            collisionBoxes.push({
+                x: x, y: y, w: w, h: h,
+                left: x - w/2, right: x + w/2,
+                top: y + h/2, bottom: y - h/2,
+                mesh: mesh
+            });
+        }
+
+        function addLadder(x, y, h) {
+            const group = new THREE.Group();
+            
+            // Rieles
+            const railGeo = new THREE.CylinderGeometry(0.1, 0.1, h, 8);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xd97706 }); // Madera
+            
+            const railL = new THREE.Mesh(railGeo, mat);
+            railL.position.set(-0.4, 0, 0);
+            const railR = new THREE.Mesh(railGeo, mat);
+            railR.position.set(0.4, 0, 0);
+            
+            group.add(railL);
+            group.add(railR);
+
+            // Peldaños
+            const stepGeo = new THREE.BoxGeometry(0.8, 0.1, 0.1);
+            const stepsCount = Math.floor(h);
+            for(let i = 0; i < stepsCount; i++) {
+                const step = new THREE.Mesh(stepGeo, mat);
+                step.position.y = -h/2 + 0.5 + i;
+                group.add(step);
+            }
+
+            group.position.set(x, y, 0);
+            scene.add(group);
+
+            ladders.push({
+                x: x, y: y, w: 1, h: h,
+                left: x - 0.5, right: x + 0.5,
+                top: y + h/2, bottom: y - h/2,
+                mesh: group
+            });
+        }
+
+        function addCoin(x, y) {
+            const geo = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, 0);
+            mesh.castShadow = true;
+            scene.add(mesh);
+            coins.push({ x: x, y: y, collected: false, mesh: mesh });
+        }
+
+        function buildLevel(levelNum) {
+            clearLevel();
+            
+            // Ajustar visuales según el tema
+            const isGrassTheme = levelNum <= 50;
+            
+            if (isGrassTheme) {
+                scene.background = new THREE.Color(0x87CEEB); // Cielo de día
+                scene.fog.color.setHex(0x87CEEB);
+            } else {
+                scene.background = new THREE.Color(0x1e1b4b); // Cielo oscuro/caverna
+                scene.fog.color.setHex(0x1e1b4b);
+            }
+
+            // Piso base
+            addBlock(0, -2, 40, 4, isGrassTheme);
+            
+            player.x = 0;
+            player.y = 1;
+            player.vx = 0;
+            player.vy = 0;
+            playerMesh.position.set(player.x, player.y, 0);
+
+            // Algoritmo de generación de camino garantizado
+            // A mayor nivel, más altura y plataformas
+            const heightTiers = 3 + Math.floor(levelNum / 5); // Crece gradualmente
+            let currentX = 0;
+            let currentY = 0;
+
+            for (let i = 0; i < heightTiers; i++) {
+                let nextY = currentY + 4; // Subir 4 unidades
+                
+                // Siguiente plataforma, zig-zag para forzar movimiento horizontal
+                let dir = (i % 2 === 0) ? 1 : -1;
+                let jumpDist = 3 + Math.random() * 4;
+                let nextX = currentX + (dir * jumpDist);
+                
+                // Mantener dentro de los limites de pantalla
+                if (nextX > 12) nextX = 8;
+                if (nextX < -12) nextX = -8;
+
+                let pWidth = 4 + Math.random() * 3;
+                
+                // Construir plataforma destino
+                addBlock(nextX, nextY - 1, pWidth, 1, isGrassTheme);
+
+                // Ocasionalmente conectar con escalera desde la plataforma actual
+                if (Math.random() > 0.3 || Math.abs(nextX - currentX) > 5) {
+                    addLadder(currentX, currentY + 1.5, 4);
+                }
+
+                // Añadir monedas en el camino principal
+                addCoin(nextX, nextY);
+
+                // Añadir plataformas trampa/distracción laterales con monedas extra
+                if (Math.random() > 0.5) {
+                    let fakeX = nextX + (dir * -1 * 8);
+                    addBlock(fakeX, nextY - 1, 3, 1, isGrassTheme);
+                    addCoin(fakeX, nextY);
+                }
+
+                currentX = nextX;
+                currentY = nextY;
+            }
+
+            // Crear puerta de salida en la última plataforma
+            const doorGeo = new THREE.BoxGeometry(1.5, 2, 0.5);
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x92400e }); // Dorada brillante
+            const doorMesh = new THREE.Mesh(doorGeo, doorMat);
+            doorMesh.position.set(currentX, currentY + 0.5, -0.5); // Ligeramente atrás
+            scene.add(doorMesh);
+            
+            exitDoor = {
+                x: currentX, y: currentY + 0.5, w: 1.5, h: 2, mesh: doorMesh
+            };
+
+            updateHUD();
+        }
+
+
+        // --- FÍSICAS Y LÓGICA DEL JUEGO ---
+
+        function AABBIntersect(aX, aY, aW, aH, bLeft, bRight, bTop, bBottom) {
+            const aLeft = aX - aW/2;
+            const aRight = aX + aW/2;
+            const aTop = aY + aH/2;
+            const aBottom = aY - aH/2;
+            
+            return (aLeft < bRight && aRight > bLeft && aTop > bBottom && aBottom < bTop);
+        }
+
+        function updatePhysics() {
+            if (!gameActive) return;
+
+            let currentSpeed = player.speed;
+            let currentJump = hasSuperJump ? player.jumpForce * 1.3 : player.jumpForce;
+
+            // Input horizontal
+            if (keys.left) player.vx = -currentSpeed;
+            else if (keys.right) player.vx = currentSpeed;
+            else {
+                // Fricción suave en el aire para mantener inercia de salto largo
+                if (!player.onGround && !player.onLadder) {
+                    player.vx *= 0.95;
+                } else {
+                    player.vx = 0;
+                }
+            }
+
+            // Movimiento X
+            player.x += player.vx;
+            
+            // Colisiones X
+            for (let box of collisionBoxes) {
+                if (AABBIntersect(player.x, player.y, player.width, player.height, box.left, box.right, box.top, box.bottom)) {
+                    if (player.vx > 0) player.x = box.left - player.width/2;
+                    else if (player.vx < 0) player.x = box.right + player.width/2;
+                }
+            }
+
+            // Lógica de Escaleras (Subir y Bajar con Arriba / Abajo)
+            let currentLadder = null;
+            for (let lad of ladders) {
+                // Rango de detección ampliado para engancharse fácilmente arriba y abajo
+                if (AABBIntersect(player.x, player.y, player.width, player.height, lad.left - 0.3, lad.right + 0.3, lad.top + 0.9, lad.bottom - 0.5)) {
+                    if (Math.abs(player.x - lad.x) < 0.9) {
+                        currentLadder = lad;
+                        break;
+                    }
+                }
+            }
+
+            // Activar estado de escalada al presionar Arriba o Abajo cerca de una escalera
+            if (currentLadder && (keys.up || keys.down)) {
+                player.climbing = true;
+            }
+
+            // Salir de la escalera si nos alejamos horizontalmente o salimos de su rango
+            if (!currentLadder || Math.abs(player.x - currentLadder.x) > 0.9) {
+                player.climbing = false;
+            }
+
+            // Movimiento Y, Escalada y Gravedad
+            if (player.climbing && currentLadder) {
+                let climbSpeed = 0.16; // Velocidad de subida/bajada en la escalera
+                player.vy = 0;
+                
+                // Alineación suave con el centro de la escalera
+                player.x += (currentLadder.x - player.x) * 0.25;
+
+                // Subir al presionar Tecla Arriba / W / ⬆️
+                if (keys.up) {
+                    player.y += climbSpeed;
+                }
+                // Bajar al presionar Tecla Abajo / S / ⬇️
+                if (keys.down) {
+                    player.y -= climbSpeed;
+                }
+
+                // Detectar si llega arriba de la escalera para desembarcar en la plataforma
+                if (player.y > currentLadder.top + player.height / 2) {
+                    player.y = currentLadder.top + player.height / 2;
+                    player.climbing = false;
+                    player.onGround = true;
+                }
+
+                // Detectar si llega abajo y toca una plataforma
+                for (let box of collisionBoxes) {
+                    if (AABBIntersect(player.x, player.y, player.width, player.height, box.left, box.right, box.top, box.bottom)) {
+                        if (player.y - player.height / 2 <= box.top && player.y > box.bottom) {
+                            player.y = box.top + player.height / 2;
+                            player.climbing = false;
+                            player.onGround = true;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Aplicar gravedad si no está escalando
+                player.vy += player.gravity;
+
+                // Salto parabólico al presionar Arriba, W o Espacio (solo en el suelo)
+                if (keys.up && player.onGround) {
+                    player.vy = currentJump;
+                    if (keys.left) player.vx = -currentSpeed * 1.6;
+                    if (keys.right) player.vx = currentSpeed * 1.6;
+                    player.onGround = false;
+                }
+
+                player.y += player.vy;
+                player.onGround = false;
+
+                // Colisiones Y con plataformas
+                for (let box of collisionBoxes) {
+                    if (AABBIntersect(player.x, player.y, player.width, player.height, box.left, box.right, box.top, box.bottom)) {
+                        if (player.vy < 0) { // Cae sobre la plataforma
+                            player.y = box.top + player.height / 2;
+                            player.vy = 0;
+                            player.onGround = true;
+                        } else if (player.vy > 0) { // Golpea el techo
+                            player.y = box.bottom - player.height / 2;
+                            player.vy = 0;
+                        }
+                    }
+                }
+            }
+
+            // Limite inferior (Muerte por caida)
+            if (player.y < -10) {
+                player.y = 1; // Respawn simple
+                player.x = 0;
+                player.vy = 0;
+            }
+
+            // Actualizar malla 3D
+            playerMesh.position.x = player.x;
+            playerMesh.position.y = player.y;
+
+            // Recolectar Monedas (Ahora da +10 por moneda)
+            for (let i = coins.length - 1; i >= 0; i--) {
+                let c = coins[i];
+                if (!c.collected) {
+                    c.mesh.rotation.y += 0.05; // Animar moneda
+                    
+                    // Distancia
+                    let dx = player.x - c.x;
+                    let dy = player.y - c.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < 1.0) {
+                        c.collected = true;
+                        totalCoins += 10; // Suma 10 monedas por cada una
+                        scene.remove(c.mesh);
+                        updateHUD();
+                    }
+                }
+            }
+
+            // Verificar Puerta de Salida
+            if (exitDoor) {
+                let dx = player.x - exitDoor.x;
+                let dy = player.y - exitDoor.y;
+                if (Math.abs(dx) < 1.0 && Math.abs(dy) < 1.5) {
+                    levelComplete();
+                }
+            }
+
+            // Cámara sigue al jugador suavemente
+            camera.position.x += (player.x - camera.position.x) * 0.1;
+            camera.position.y += (player.y + 4 - camera.position.y) * 0.1;
+        }
+
+        // --- FLUJO DE UI Y ESTADOS ---
+
+        function startGame() {
+            uiMainMenu.classList.add('hidden');
+            uiHUD.classList.remove('hidden');
+            gameActive = true;
+            buildLevel(currentLevel);
+        }
+
+        function levelComplete() {
+            gameActive = false;
+            uiHUD.classList.add('hidden');
+            
+            // Recompensa base por pasar nivel
+            totalCoins += 5; 
+            document.getElementById('lvl-coins').innerText = totalCoins;
+            
+            if (currentLevel >= MAX_LEVEL) {
+                uiGameWon.classList.remove('hidden');
+            } else {
+                uiLevelComplete.classList.remove('hidden');
+            }
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            uiLevelComplete.classList.add('hidden');
+            uiHUD.classList.remove('hidden');
+            buildLevel(currentLevel);
+            gameActive = true;
+        }
+
+        function updateHUD() {
+            textLevel.innerText = currentLevel;
+            textCoins.innerText = totalCoins;
+            document.getElementById('shop-coins-display').innerText = totalCoins;
+        }
+
+        // --- TIENDA ---
+        function openShop() {
+            gameActive = false; // Pausar juego
+            updateHUD();
+            uiShop.classList.remove('hidden');
+            checkShopButtons();
+        }
+
+        function closeShop() {
+            uiShop.classList.add('hidden');
+            gameActive = true; // Reanudar
+        }
+
+        function buyItem(item, cost) {
+            if (totalCoins >= cost) {
+                totalCoins -= cost;
+                
+                if (item === 'red' && !hasRedSkin) {
+                    hasRedSkin = true;
+                    playerMesh.material.color.setHex(0xef4444); // Rojo
+                    document.getElementById('buy-red').innerText = "Comprado";
+                    document.getElementById('buy-red').disabled = true;
+                }
+                else if (item === 'aura' && !hasAura) {
+                    hasAura = true;
+                    playerAura.visible = true;
+                    document.getElementById('buy-aura').innerText = "Comprado";
+                    document.getElementById('buy-aura').disabled = true;
+                }
+                else if (item === 'jump' && !hasSuperJump) {
+                    hasSuperJump = true;
+                    document.getElementById('buy-jump').innerText = "Comprado";
+                    document.getElementById('buy-jump').disabled = true;
+                }
+                
+                updateHUD();
+                checkShopButtons();
+            }
+        }
+
+        function checkShopButtons() {
+            // Deshabilitar botones si no hay dinero y no estan comprados
+            const btnRed = document.getElementById('buy-red');
+            if (!hasRedSkin) btnRed.disabled = totalCoins < 10;
+            
+            const btnAura = document.getElementById('buy-aura');
+            if (!hasAura) btnAura.disabled = totalCoins < 25;
+
+            const btnJump = document.getElementById('buy-jump');
+            if (!hasSuperJump) btnJump.disabled = totalCoins < 50;
+        }
+
+
+        // --- BUCLE PRINCIPAL ---
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePhysics();
+            renderer.render(scene, camera);
+        }
+
+        // Iniciar todo
+        window.onload = init;
+
+    </script>
+</body>
+</html>
