@@ -190,37 +190,115 @@
         }
 
         /* =========================================
-           EMPTY STATE / PROJECTS
+           PROJECTS GRID & CARDS
            ========================================= */
-        .empty-state-card {
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .project-card {
             background-color: var(--secondary);
-            border: 1px dashed var(--card-border);
+            border: 1px solid var(--card-border);
             border-radius: 16px;
-            padding: 4rem 2rem;
-            text-align: center;
-            max-width: 600px;
-            margin: 3rem auto 0 auto;
+            overflow: hidden;
+            transition: var(--transition);
             display: flex;
             flex-direction: column;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .project-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 30px -10px rgba(59, 130, 246, 0.25);
+        }
+
+        .project-preview {
+            height: 200px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #172554 100%);
+            display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            border-bottom: 1px solid var(--card-border);
+            overflow: hidden;
         }
 
-        .empty-state-icon {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
+        .project-preview-icon {
+            font-size: 4rem;
+            transition: transform 0.4s ease;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
         }
 
-        .empty-state-card h3 {
-            font-size: 1.5rem;
+        .project-card:hover .project-preview-icon {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .project-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+        }
+
+        .project-content {
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .project-title {
+            font-size: 1.4rem;
+            font-weight: 700;
             margin-bottom: 0.75rem;
             color: var(--text-main);
         }
 
-        .empty-state-card p {
-            font-size: 1rem;
+        .project-description {
+            font-size: 0.95rem;
             color: var(--text-light);
-            margin-bottom: 0;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .project-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: #cbd5e1;
+            border-radius: 6px;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .project-actions .btn {
+            font-size: 0.9rem;
+            padding: 0.65rem 1.1rem;
+            flex: 1;
         }
 
         /* =========================================
@@ -454,12 +532,46 @@
     <!-- Proyectos Section -->
     <section id="proyectos" class="section-padding">
         <div class="container">
-            <h2>Mis Proyectos y Juegos</h2>
+            <h2>Mis Proyectos y Aplicaciones</h2>
 
-            <div class="empty-state-card">
-                <span class="empty-state-icon">🚀</span>
-                <h3>Alumno Nuevo</h3>
-                <p>Nicolas es un nuevo estudiante. Próximamente se irán publicando aquí sus aplicaciones, proyectos y juegos desarrollados.</p>
+            <div class="projects-grid">
+                <!-- Tarjeta Cubo 3D -->
+                <div class="project-card">
+                    <div class="project-preview">
+                        <span class="project-preview-icon">🎲</span>
+                        <span class="project-badge">Juego 3D</span>
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">Cubo 3D: Aventura 100 Niveles</h3>
+                        <p class="project-description">
+                            Juego interactivo 3D tipo plataformas y aventura (Lode Cuber 3D). Explora 100 niveles progresivos con físicas de salto y escaleras, recolección de monedas, tienda con mejoras y skins.
+                        </p>
+                        <div class="project-tags">
+                            <span class="tag">Three.js</span>
+                            <span class="tag">WebGL</span>
+                            <span class="tag">JavaScript</span>
+                            <span class="tag">Tailwind CSS</span>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-primary playable-trigger"
+                                    data-game-url="cubo3d/index.html"
+                                    data-game-title="Cubo 3D: Aventura 100 Niveles"
+                                    data-game-icon="🎲">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                Jugar ahora
+                            </button>
+                            <a href="cubo3d/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" title="Abrir en pestaña nueva">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
