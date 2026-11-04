@@ -1,5 +1,575 @@
-<center>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nicolas Arteaga Alandia | Desarrollo de Aplicaciones y Juegos</title>
+    <style>
+        /* =========================================
+           VARIABLES & RESET
+           ========================================= */
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary: #0f172a;
+            --bg-dark: #050b14;
+            --bg-dot: rgba(255, 255, 255, 0.05);
+            --text-main: #f8fafc;
+            --text-light: #94a3b8;
+            --white: #ffffff;
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --transition: all 0.3s ease;
+            --card-border: #1e293b;
+        }
 
-  <h1>PAGINA WEB NICOLAS</h1>
-  
-</center>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            color: var(--text-main);
+            line-height: 1.6;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at center, var(--bg-dot) 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        img { max-width: 100%; height: auto; }
+
+        /* =========================================
+           TYPOGRAPHY & UTILITIES
+           ========================================= */
+        h1, h2, h3 { color: var(--text-main); line-height: 1.2; }
+        h1 { font-size: clamp(2.8rem, 5.5vw, 4.2rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; }
+        h2 { font-size: clamp(2rem, 4vw, 2.5rem); font-weight: 700; margin-bottom: 2rem; text-align: center; }
+        p { margin-bottom: 1rem; font-size: 1.125rem; color: var(--text-light); }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+        
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+        }
+        .btn-secondary:hover {
+            border-color: var(--text-light);
+            transform: translateY(-2px);
+        }
+
+        .section-padding { padding: 6rem 0; }
+
+        .highlight { color: var(--primary); }
+
+        /* =========================================
+           HEADER & NAV
+           ========================================= */
+        header {
+            background: transparent;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-box {
+            background-color: #0ea5e9;
+            color: var(--white);
+            font-weight: 800;
+            font-size: 1.25rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        .logo-text { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+
+        .nav-links { display: flex; gap: 2rem; }
+        .nav-links a { font-weight: 500; color: var(--text-light); transition: var(--transition); font-size: 0.95rem; }
+        .nav-links a:hover, .nav-links a.active { color: var(--text-main); }
+
+        /* =========================================
+           HERO SECTION
+           ========================================= */
+        .hero {
+            padding: 12rem 0 8rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-bg {
+             position: absolute;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 100%;
+             z-index: -1;
+             background: radial-gradient(circle at center, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #93c5fd;
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            text-transform: uppercase;
+        }
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #60a5fa;
+            border-radius: 50%;
+        }
+
+        .hero p {
+            max-width: 800px;
+            margin: 1.5rem auto 2.5rem auto;
+            font-size: 1.125rem;
+            color: #cbd5e1;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        /* =========================================
+           EMPTY STATE / PROJECTS
+           ========================================= */
+        .empty-state-card {
+            background-color: var(--secondary);
+            border: 1px dashed var(--card-border);
+            border-radius: 16px;
+            padding: 4rem 2rem;
+            text-align: center;
+            max-width: 600px;
+            margin: 3rem auto 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+        }
+
+        .empty-state-card p {
+            font-size: 1rem;
+            color: var(--text-light);
+            margin-bottom: 0;
+        }
+
+        /* =========================================
+           GAME MODAL PLAYER
+           ========================================= */
+        .game-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 11, 20, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .game-modal.active {
+            display: flex;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-content {
+            background-color: var(--secondary);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 960px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .modal-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .modal-title-wrap span { font-size: 1.4rem; }
+        .modal-title-wrap h3 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
+
+        .modal-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-light);
+            border-radius: 8px;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.825rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .modal-btn:hover {
+            color: var(--white);
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .modal-btn-close {
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            line-height: 1;
+            padding: 0.4rem 0.6rem;
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .modal-btn-close:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .modal-body {
+            flex: 1;
+            width: 100%;
+            background: #000;
+            position: relative;
+        }
+
+        .modal-body iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* =========================================
+           FOOTER
+           ========================================= */
+        footer {
+            border-top: 1px solid var(--card-border);
+            padding: 3rem 0;
+            margin-top: 4rem;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .footer-info p {
+            color: var(--text-light);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+        .footer-info .small-text {
+             font-size: 0.75rem;
+             text-transform: uppercase;
+             letter-spacing: 0.05em;
+             margin-top: 0.5rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            border: 1px solid var(--card-border);
+            transition: var(--transition);
+        }
+        .social-link:hover {
+            color: var(--white);
+            border-color: var(--text-light);
+        }
+
+        .social-link svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            h1 { font-size: 2.5rem; }
+            .footer-content { flex-direction: column; text-align: center; }
+            .hero-buttons { flex-direction: column; }
+            .modal-content { height: 95vh; margin: 0.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header & Navegación -->
+    <header>
+        <div class="container navbar">
+            <div class="logo-container">
+                <div class="logo-box">NA</div>
+                <div class="logo-text">Nicolas Arteaga Alandia</div>
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#inicio" class="active">Inicio</a></li>
+                    <li><a href="#proyectos">Proyectos</a></li>
+                    <li><a href="#hobbies">Hobbies</a></li>
+                    <li><a href="#ayuda">Ayuda</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="hero">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="badge-pill">
+                <span class="badge-dot"></span>
+                Nuevo Alumno
+            </div>
+            <h1>Desarrollo de<br>Aplicaciones <span class="highlight">Web y</span><br><span class="highlight">Mobile</span></h1>
+            <p>Hola, soy <strong>Nicolas Arteaga Alandia</strong> de la Unidad Educativa Cambridge. Estudiante apasionado por el desarrollo de software y la creación de soluciones interactivas, responsivas y de alto rendimiento para web y dispositivos móviles.</p>
+            
+            <div class="hero-buttons">
+                <a href="#proyectos" class="btn btn-primary">
+                    Ver Proyectos
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </a>
+                <a href="mailto:contacto@ejemplo.com" class="btn btn-secondary">
+                    Contactar
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><path d="m16 19 2 2 4-4"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Proyectos Section -->
+    <section id="proyectos" class="section-padding">
+        <div class="container">
+            <h2>Mis Proyectos y Juegos</h2>
+
+            <div class="empty-state-card">
+                <span class="empty-state-icon">🚀</span>
+                <h3>Alumno Nuevo</h3>
+                <p>Nicolas es un nuevo estudiante. Próximamente se irán publicando aquí sus aplicaciones, proyectos y juegos desarrollados.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal para jugar aplicaciones directamente en la página -->
+    <div id="gameModal" class="game-modal" aria-hidden="true" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span id="modalIcon">🎮</span>
+                    <h3 id="modalTitle">Proyecto</h3>
+                </div>
+                <div class="modal-actions">
+                    <a id="modalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="modal-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        Pestaña nueva
+                    </a>
+                    <button id="modalCloseBtn" class="modal-btn-close" aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <iframe id="gameIframe" src="" allowfullscreen allow="autoplay; fullscreen"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-info">
+                <div class="logo-container" style="margin-bottom: 1rem;">
+                    <div class="logo-box">NA</div>
+                    <div class="logo-text" style="color: var(--white);">Nicolas Arteaga Alandia</div>
+                </div>
+                <p>Unidad Educativa Cambridge - 2026</p>
+                <p class="small-text">BUILDING THE AI FUTURE</p>
+            </div>
+
+            <div class="social-links">
+                <a href="#" class="social-link" aria-label="GitHub">
+                    <svg viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.45-1.15-1.11-1.46-1.11-1.46-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg>
+                </a>
+                <a href="#" class="social-link" aria-label="LinkedIn">
+                    <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                </a>
+                <a href="mailto:contacto@ejemplo.com" class="social-link" aria-label="Email">
+                    <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script para el visor modal interactivo -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('gameModal');
+            const iframe = document.getElementById('gameIframe');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalExternalLink = document.getElementById('modalExternalLink');
+            const closeBtn = document.getElementById('modalCloseBtn');
+            const playableTriggers = document.querySelectorAll('.playable-trigger');
+
+            const openGame = (url, title, icon) => {
+                modalTitle.textContent = title;
+                modalIcon.textContent = icon || '🎮';
+                modalExternalLink.href = url;
+                iframe.src = url;
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            };
+
+            const closeGame = () => {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                iframe.src = '';
+                document.body.style.overflow = '';
+            };
+
+            playableTriggers.forEach(trigger => {
+                trigger.addEventListener('click', (e) => {
+                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                        e.preventDefault();
+                        const url = trigger.getAttribute('data-game-url');
+                        const title = trigger.getAttribute('data-game-title');
+                        const icon = trigger.getAttribute('data-game-icon');
+                        openGame(url, title, icon);
+                    }
+                });
+            });
+
+            closeBtn.addEventListener('click', closeGame);
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeGame();
+                }
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    closeGame();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
